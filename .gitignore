@@ -1,0 +1,37 @@
+# Ambientes virtuales y dependencias Python
+.venv/
+venv/
+ENV/
+__pycache__/
+*.py[cod]
+*.class
+*.pytest_cache/
+.coverage
+htmlcov/
+
+# Node / Next.js
+apps/web/node_modules/
+apps/web/.next/
+apps/web/out/
+apps/web/build/
+
+# Secretos y Entornos (CRÍTICO)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.cert
+
+# IDEs y SO
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+*.swp
+.DS_Store
+
+# Archivos temporales y uploads de prueba
+uploads/
+tmp/
+*.log
