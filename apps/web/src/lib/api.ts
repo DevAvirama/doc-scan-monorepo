@@ -28,8 +28,17 @@ export class ApiError extends Error {
 
     // Detectar puntuación de nitidez desde el objeto detail o regex en el mensaje
     let detectedBlurScore: number | undefined;
-    if (detail && typeof detail === 'object' && typeof detail.blur_score === 'number') {
-      detectedBlurScore = detail.blur_score;
+    if (
+      detail &&
+      typeof detail === 'object' &&
+      'blur_score' in detail &&
+      detail.blur_score !== null &&
+      detail.blur_score !== undefined
+    ) {
+      const parsed = parseFloat(String(detail.blur_score));
+      if (!isNaN(parsed)) {
+        detectedBlurScore = parsed;
+      }
     } else {
       const match = message.match(/(?:nitidez|blur_score)[:\s]+([\d.]+)/i);
       if (match && match[1]) {

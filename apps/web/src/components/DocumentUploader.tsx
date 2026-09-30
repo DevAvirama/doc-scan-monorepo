@@ -3,6 +3,7 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { api, ApiError } from '@/lib/api';
 import { DocumentDetail } from '@/types/document';
+import { formatMetric } from '@/lib/utils';
 import {
   UploadCloud,
   FileImage,
@@ -199,12 +200,12 @@ export function DocumentUploader({ onScanSuccess }: DocumentUploaderProps) {
                   <div>
                     <span className="text-slate-400">Puntaje obtenido (Laplaciano): </span>
                     <span className="font-bold text-amber-400 text-sm">
-                      {blurScore.toFixed(1)}
+                      {formatMetric(blurScore, 1)}
                     </span>
                   </div>
                   <div>
                     <span className="text-slate-400">Umbral mínimo requerido: </span>
-                    <span className="font-bold text-emerald-400 text-sm">≥ {blurThreshold.toFixed(1)}</span>
+                    <span className="font-bold text-emerald-400 text-sm">≥ {formatMetric(blurThreshold, 1)}</span>
                   </div>
                   <div className="text-slate-400 italic">
                     💡 Sugerencia: Enfoca mejor la cámara, limpia el lente y asegura buena iluminación.

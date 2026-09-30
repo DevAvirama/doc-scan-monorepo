@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { DocumentDetail, DocumentItem } from '@/types/document';
-import { formatCurrency, formatDate, formatDateTime } from '@/lib/utils';
+import { formatCurrency, formatDate, formatDateTime, formatMetric, safeNumber } from '@/lib/utils';
 import {
   FileText,
   Calendar,
@@ -40,15 +40,15 @@ export function DocumentResultView({
   const [items, setItems] = useState<DocumentItem[]>(initialDocument.items || []);
   const [copiedJson, setCopiedJson] = useState(false);
 
-  // Recálculo reactivo de la suma de ítems
+  // Recálculo reactivo de la suma de ítems con coerción segura
   const computedItemsSum = useMemo(() => {
-    return items.reduce((acc, curr) => acc + (Number(curr.total_price) || 0), 0);
+    return items.reduce((acc, curr) => acc + safeNumber(curr.total_price), 0);
   }, [items]);
 
   // Validación de tolerancia de redondeo (0.05) idéntica a la entidad Python
   const isSumConsistent = useMemo(() => {
     if (items.length === 0) return true;
-    return Math.abs(computedItemsSum - Number(doc.total_amount)) <= 0.05;
+    return Math.abs(computedItemsSum - safeNumber(doc.total_amount)) <= 0.05;
   }, [computedItemsSum, doc.total_amount, items.length]);
 
   const handleItemChange = (index: number, field: keyof DocumentItem, value: string | number) => {
@@ -58,15 +58,15 @@ export function DocumentResultView({
     if (field === 'description') {
       current.description = String(value);
     } else if (field === 'quantity') {
-      const q = Math.max(0, parseFloat(String(value)) || 0);
+      const q = Math.max(0, safeNumber(value));
       current.quantity = q;
-      current.total_price = Number((q * Number(current.unit_price)).toFixed(2));
+      current.total_price = Number((q * safeNumber(current.unit_price)).toFixed(2));
     } else if (field === 'unit_price') {
-      const p = Math.max(0, parseFloat(String(value)) || 0);
+      const p = Math.max(0, safeNumber(value));
       current.unit_price = p;
-      current.total_price = Number((Number(current.quantity) * p).toFixed(2));
+      current.total_price = Number((safeNumber(current.quantity) * p).toFixed(2));
     } else if (field === 'total_price') {
-      current.total_price = Math.max(0, parseFloat(String(value)) || 0);
+      current.total_price = Math.max(0, safeNumber(value));
     }
 
     updated[index] = current;
@@ -102,8 +102,11 @@ export function DocumentResultView({
     }
   };
 
-  // Porcentaje de confianza normalizado
-  const confidencePercent = Math.min(100, Math.max(0, Math.round(doc.confidence_score * 100)));
+  // Porcentaje de confianza normalizado de forma segura
+  const confidencePercent = Math.min(
+    100,
+    Math.max(0, Math.round(safeNumber(doc.confidence_score) * 100))
+  );
 
   return (
     <div className="w-full max-w-7xl mx-auto space-y-6">
@@ -204,22 +207,22 @@ export function DocumentResultView({
                 <span className="text-slate-400">Score de Nitidez (Laplaciano)</span>
                 <span
                   className={`font-bold ${
-                    (doc.blur_score ?? 0) >= 80 ? 'text-emerald-400' : 'text-amber-400'
+                    safeNumber(doc.blur_score) >= 80 ? 'text-emerald-400' : 'text-amber-400'
                   }`}
                 >
-                  {doc.blur_score !== null ? doc.blur_score.toFixed(1) : 'N/A'}
+                  {formatMetric(doc.blur_score, 1, 'N/A')}
                 </span>
               </div>
               <div className="flex items-center justify-between text-[11px] text-slate-500">
                 <span>Umbral mínimo: 80.0</span>
                 <span
                   className={`px-1.5 py-0.2 rounded font-medium ${
-                    (doc.blur_score ?? 0) >= 80
+                    safeNumber(doc.blur_score) >= 80
                       ? 'bg-emerald-950 text-emerald-400'
                       : 'bg-amber-950 text-amber-400'
                   }`}
                 >
-                  {(doc.blur_score ?? 0) >= 80 ? 'Óptima' : 'Límite'}
+                  {safeNumber(doc.blur_score) >= 80 ? 'Óptima' : 'Límite'}
                 </span>
               </div>
             </div>
@@ -327,12 +330,12 @@ export function DocumentResultView({
                 <input
                   type="number"
                   step="0.01"
-                  value={doc.tax_amount ?? ''}
+                  value={doc.tax_amount !== null && doc.tax_amount !== undefined ? doc.tax_amount : ''}
                   placeholder="0.00"
                   onChange={(e) =>
                     setDoc({
                       ...doc,
-                      tax_amount: e.target.value !== '' ? parseFloat(e.target.value) : null,
+                      tax_amount: e.target.value !== '' ? safeNumber(e.target.value) : null,
                     })
                   }
                   className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-sm text-slate-100 focus:outline-none focus:border-cyan-500"
@@ -345,9 +348,9 @@ export function DocumentResultView({
                 <input
                   type="number"
                   step="0.01"
-                  value={doc.total_amount}
+                  value={doc.total_amount ?? ''}
                   onChange={(e) =>
-                    setDoc({ ...doc, total_amount: parseFloat(e.target.value) || 0 })
+                    setDoc({ ...doc, total_amount: safeNumber(e.target.value) })
                   }
                   className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-sm font-bold text-cyan-400 focus:outline-none focus:border-cyan-500"
                 />
@@ -408,7 +411,7 @@ export function DocumentResultView({
                           <input
                             type="number"
                             step="0.01"
-                            value={item.quantity}
+                            value={item.quantity !== null && item.quantity !== undefined ? item.quantity : ''}
                             onChange={(e) => handleItemChange(idx, 'quantity', e.target.value)}
                             className="w-20 px-2 py-1.5 rounded text-right bg-transparent hover:bg-slate-900 focus:bg-slate-950 border border-transparent hover:border-slate-800 focus:border-cyan-500 text-slate-200 focus:outline-none"
                           />
@@ -417,7 +420,7 @@ export function DocumentResultView({
                           <input
                             type="number"
                             step="0.01"
-                            value={item.unit_price}
+                            value={item.unit_price !== null && item.unit_price !== undefined ? item.unit_price : ''}
                             onChange={(e) => handleItemChange(idx, 'unit_price', e.target.value)}
                             className="w-28 px-2 py-1.5 rounded text-right bg-transparent hover:bg-slate-900 focus:bg-slate-950 border border-transparent hover:border-slate-800 focus:border-cyan-500 text-slate-200 focus:outline-none"
                           />
@@ -454,7 +457,7 @@ export function DocumentResultView({
                   <div className="flex items-center gap-2 text-xs text-amber-400 font-medium">
                     <Info className="w-4 h-4 shrink-0" />
                     <span>
-                      Diferencia de {formatCurrency(Math.abs(computedItemsSum - doc.total_amount), doc.currency)}{' '}
+                      Diferencia de {formatCurrency(Math.abs(computedItemsSum - safeNumber(doc.total_amount)), doc.currency)}{' '}
                       entre ítems ({formatCurrency(computedItemsSum, doc.currency)}) y total declarado ({formatCurrency(doc.total_amount, doc.currency)}).
                     </span>
                   </div>

@@ -5,9 +5,9 @@ export type DocumentType = 'RECEIPT' | 'INVOICE' | 'TICKET' | 'UNKNOWN';
 export interface DocumentItem {
   id: string;
   description: string;
-  quantity: number;
-  unit_price: number;
-  total_price: number;
+  quantity: number | string;
+  unit_price: number | string;
+  total_price: number | string;
 }
 
 export interface DocumentDetail {
@@ -17,10 +17,10 @@ export interface DocumentDetail {
   tax_id: string | null;
   document_date: string | null;
   currency: string;
-  total_amount: number;
-  tax_amount: number | null;
-  confidence_score: number;
-  blur_score: number | null;
+  total_amount: number | string;
+  tax_amount: number | string | null;
+  confidence_score: number | string;
+  blur_score: number | string | null;
   status: DocumentStatus | string;
   items: DocumentItem[];
   created_at: string;
@@ -34,10 +34,10 @@ export interface DocumentSummary {
   tax_id: string | null;
   document_date: string | null;
   currency: string;
-  total_amount: number;
-  tax_amount: number | null;
-  confidence_score: number;
-  blur_score: number | null;
+  total_amount: number | string;
+  tax_amount: number | string | null;
+  confidence_score: number | string;
+  blur_score: number | string | null;
   status: DocumentStatus | string;
   created_at: string;
   updated_at?: string;
@@ -52,7 +52,7 @@ export interface PaginatedDocumentsResponse {
 }
 
 export interface BlurErrorDetail {
-  blur_score?: number;
+  blur_score?: number | string;
   [key: string]: unknown;
 }
 

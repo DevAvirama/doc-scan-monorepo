@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { api, ApiError } from '@/lib/api';
 import { DocumentSummary } from '@/types/document';
-import { formatCurrency, formatDate } from '@/lib/utils';
+import { formatCurrency, formatDate, formatMetric, safeNumber } from '@/lib/utils';
 import {
   FileText,
   ChevronLeft,
@@ -224,15 +224,17 @@ export function DocumentHistoryTable({
                       <div className="inline-flex items-center gap-2 text-[11px]">
                         <span
                           className={`font-semibold ${
-                            (doc.blur_score ?? 0) >= 80 ? 'text-emerald-400' : 'text-amber-400'
+                            safeNumber(doc.blur_score) >= 80 ? 'text-emerald-400' : 'text-amber-400'
                           }`}
-                          title={`Nitidez: ${doc.blur_score?.toFixed(1) ?? 'N/A'}`}
+                          title={`Nitidez: ${formatMetric(doc.blur_score, 1, 'N/A')}`}
                         >
-                          {doc.blur_score !== null ? `${doc.blur_score.toFixed(0)} pts` : '—'}
+                          {doc.blur_score !== null && doc.blur_score !== undefined
+                            ? `${formatMetric(doc.blur_score, 0)} pts`
+                            : '—'}
                         </span>
                         <span className="text-slate-600">•</span>
                         <span className="text-cyan-400 font-medium" title="Confianza OCR">
-                          {Math.round(doc.confidence_score * 100)}%
+                          {Math.round(safeNumber(doc.confidence_score) * 100)}%
                         </span>
                       </div>
                     </td>

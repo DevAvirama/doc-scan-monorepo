@@ -1,22 +1,22 @@
 from contextlib import asynccontextmanager
+from collections.abc import AsyncGenerator
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
+from src.core.config import settings
 from src.domain.exceptions import DocumentNotFoundError, DomainError, VisionServiceError
 from src.infrastructure.api.exception_handlers import (
     document_not_found_handler,
     domain_error_handler,
     vision_service_error_handler,
 )
-from src.infrastructure.api.routes import router
-from src.infrastructure.database.session import Base, engine
+from src.infrastructure.api.routes import router as documents_router
+from src.infrastructure.database.session import engine
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Inicialización del esquema relacional (modo local/desarrollo)
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     yield
     await engine.dispose()
 
@@ -28,15 +28,25 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Registro de excepciones de dominio
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "*",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.add_exception_handler(DocumentNotFoundError, document_not_found_handler)
-app.add_exception_handler(VisionServiceError, vision_service_error_handler)
 app.add_exception_handler(DomainError, domain_error_handler)
+app.add_exception_handler(VisionServiceError, vision_service_error_handler)
 
-# Rutas
-app.include_router(router, prefix="/api/v1")
+app.include_router(documents_router, prefix="/api/v1")
 
 
-@app.get("/api/v1/health", tags=["System"])
-def health_check():
+@app.get("/api/v1/health", tags=["Health"])
+async def health_check() -> dict[str, str]:
     return {"status": "ok", "service": "core_api"}
