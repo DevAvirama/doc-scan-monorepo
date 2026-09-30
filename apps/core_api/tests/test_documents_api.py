@@ -1,10 +1,10 @@
 from uuid import uuid4
-import pytest
+
 from httpx import AsyncClient
 
-from tests.conftest import MockCvServiceClient
 from src.infrastructure.api.deps import get_cv_client
 from src.main import app
+from tests.conftest import MockCvServiceClient
 
 FAKE_IMAGE = b"\xff\xd8\xff\xe0\x00\x10JFIF" + b"0" * 256
 
@@ -17,8 +17,7 @@ async def test_health_check(client: AsyncClient):
 
 async def test_scan_document_success(client: AsyncClient):
     response = await client.post(
-        "/api/v1/documents/scan",
-        files={"file": ("recibo_valido.jpg", FAKE_IMAGE, "image/jpeg")}
+        "/api/v1/documents/scan", files={"file": ("recibo_valido.jpg", FAKE_IMAGE, "image/jpeg")}
     )
     assert response.status_code == 201
     data = response.json()
@@ -33,8 +32,7 @@ async def test_scan_document_success(client: AsyncClient):
 async def test_get_document_by_id_with_items(client: AsyncClient):
     # 1. Crear documento mediante el endpoint de escaneo
     create_res = await client.post(
-        "/api/v1/documents/scan",
-        files={"file": ("factura.jpg", FAKE_IMAGE, "image/jpeg")}
+        "/api/v1/documents/scan", files={"file": ("factura.jpg", FAKE_IMAGE, "image/jpeg")}
     )
     doc_id = create_res.json()["id"]
 
@@ -60,12 +58,10 @@ async def test_get_document_not_found(client: AsyncClient):
 async def test_list_documents_pagination(client: AsyncClient):
     # Insertar dos documentos
     await client.post(
-        "/api/v1/documents/scan",
-        files={"file": ("doc1.jpg", FAKE_IMAGE, "image/jpeg")}
+        "/api/v1/documents/scan", files={"file": ("doc1.jpg", FAKE_IMAGE, "image/jpeg")}
     )
     await client.post(
-        "/api/v1/documents/scan",
-        files={"file": ("doc2.jpg", FAKE_IMAGE, "image/jpeg")}
+        "/api/v1/documents/scan", files={"file": ("doc2.jpg", FAKE_IMAGE, "image/jpeg")}
     )
 
     response = await client.get("/api/v1/documents?limit=10&offset=0")
@@ -80,8 +76,7 @@ async def test_list_documents_pagination(client: AsyncClient):
 
 async def test_scan_rejects_unsupported_mime(client: AsyncClient):
     response = await client.post(
-        "/api/v1/documents/scan",
-        files={"file": ("recibo.pdf", b"%PDF-1.4...", "application/pdf")}
+        "/api/v1/documents/scan", files={"file": ("recibo.pdf", b"%PDF-1.4...", "application/pdf")}
     )
     assert response.status_code == 400
     assert response.json()["detail"]["error"] == "INVALID_FILE_TYPE"
@@ -91,8 +86,7 @@ async def test_scan_propagates_blurry_rejection(client: AsyncClient):
     app.dependency_overrides[get_cv_client] = lambda: MockCvServiceClient(simulate_blurry=True)
 
     response = await client.post(
-        "/api/v1/documents/scan",
-        files={"file": ("borroso.jpg", FAKE_IMAGE, "image/jpeg")}
+        "/api/v1/documents/scan", files={"file": ("borroso.jpg", FAKE_IMAGE, "image/jpeg")}
     )
     assert response.status_code == 422
     assert response.json()["error"] == "VISION_SERVICE_ERROR"
@@ -102,8 +96,7 @@ async def test_scan_propagates_vision_service_offline(client: AsyncClient):
     app.dependency_overrides[get_cv_client] = lambda: MockCvServiceClient(simulate_failure=True)
 
     response = await client.post(
-        "/api/v1/documents/scan",
-        files={"file": ("recibo.jpg", FAKE_IMAGE, "image/jpeg")}
+        "/api/v1/documents/scan", files={"file": ("recibo.jpg", FAKE_IMAGE, "image/jpeg")}
     )
     assert response.status_code == 503
     assert response.json()["error"] == "VISION_SERVICE_ERROR"

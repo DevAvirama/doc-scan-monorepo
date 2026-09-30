@@ -1,4 +1,3 @@
-from typing import List, Optional, Tuple
 from uuid import UUID
 
 from sqlalchemy import func, select
@@ -26,7 +25,7 @@ class SQLAlchemyDocumentRepository(IDocumentRepository):
         await self._session.flush()
         return document_model_to_entity(doc_model)
 
-    async def get_by_id(self, document_id: UUID) -> Optional[Document]:
+    async def get_by_id(self, document_id: UUID) -> Document | None:
         query = (
             select(DocumentModel)
             .options(selectinload(DocumentModel.items))
@@ -40,7 +39,7 @@ class SQLAlchemyDocumentRepository(IDocumentRepository):
 
         return document_model_to_entity(model)
 
-    async def list_documents(self, limit: int = 20, offset: int = 0) -> Tuple[List[Document], int]:
+    async def list_documents(self, limit: int = 20, offset: int = 0) -> tuple[list[Document], int]:
         # Conteo total en base de datos
         count_query = select(func.count()).select_from(DocumentModel)
         count_result = await self._session.execute(count_query)

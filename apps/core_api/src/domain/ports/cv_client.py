@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict
+from typing import Any
 
 
 class ICvServiceClient(ABC):
@@ -7,10 +7,7 @@ class ICvServiceClient(ABC):
 
     @abstractmethod
     async def extract_from_image(
-        self,
-        image_bytes: bytes,
-        filename: str,
-        content_type: str
-    ) -> Dict[str, Any]:
+        self, image_bytes: bytes, filename: str, content_type: str
+    ) -> dict[str, Any]:
         """Envía el archivo binario a cv_service y obtiene el payload normalizado."""
         raise NotImplementedError

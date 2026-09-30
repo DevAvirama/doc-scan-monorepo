@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+
 import cv2
 import numpy as np
 
@@ -7,7 +8,6 @@ from src.domain.schemas import QualityMetrics
 
 class InvalidImageError(Exception):
     """Lanzada cuando el buffer de bytes no corresponde a una imagen válida decodificable."""
-    pass
 
 
 @dataclass(frozen=True)
@@ -42,10 +42,7 @@ class ImageProcessorService:
         blur_score = self.calculate_blur_score(gray)
         is_blurry = blur_score < self.blur_threshold
 
-        metrics = QualityMetrics(
-            is_blurry=is_blurry,
-            blur_score=blur_score
-        )
+        metrics = QualityMetrics(is_blurry=is_blurry, blur_score=blur_score)
 
         # 3. Redimensionar si supera la dimensión máxima manteniendo la relación de aspecto
         h, w = image.shape[:2]
@@ -63,9 +60,4 @@ class ImageProcessorService:
         if not success:
             raise InvalidImageError("Error al serializar la imagen procesada.")
 
-        return ProcessedImage(
-            image_bytes=encoded_img.tobytes(),
-            metrics=metrics,
-            width=w,
-            height=h
-        )
+        return ProcessedImage(image_bytes=encoded_img.tobytes(), metrics=metrics, width=w, height=h)

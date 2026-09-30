@@ -1,4 +1,6 @@
-from typing import Any, AsyncGenerator, Dict
+from collections.abc import AsyncGenerator
+from typing import Any
+
 import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
@@ -16,18 +18,15 @@ class MockCvServiceClient(ICvServiceClient):
         self.simulate_failure = simulate_failure
 
     async def extract_from_image(
-        self,
-        image_bytes: bytes,
-        filename: str = "receipt.jpg",
-        content_type: str = "image/jpeg"
-    ) -> Dict[str, Any]:
+        self, image_bytes: bytes, filename: str = "receipt.jpg", content_type: str = "image/jpeg"
+    ) -> dict[str, Any]:
         if self.simulate_failure:
             raise VisionServiceError("Fallo de red hacia el microservicio.", status_code=503)
 
         if self.simulate_blurry:
             raise VisionServiceError(
                 "La imagen no tiene nitidez suficiente. (Puntuación de nitidez: 34.2)",
-                status_code=422
+                status_code=422,
             )
 
         return {
@@ -46,17 +45,17 @@ class MockCvServiceClient(ICvServiceClient):
                         "description": "Café Sello Rojo 500g",
                         "quantity": 2.0,
                         "unit_price": 18000.00,
-                        "total_price": 36000.00
+                        "total_price": 36000.00,
                     },
                     {
                         "description": "Leche Deslactosada 1L",
                         "quantity": 3.0,
                         "unit_price": 7500.00,
-                        "total_price": 22500.00
-                    }
+                        "total_price": 22500.00,
+                    },
                 ],
-                "confidence_score": 0.98
-            }
+                "confidence_score": 0.98,
+            },
         }
 
 
@@ -81,7 +80,9 @@ def mock_cv_client() -> MockCvServiceClient:
 
 
 @pytest.fixture
-async def client(db_session: AsyncSession, mock_cv_client: MockCvServiceClient) -> AsyncGenerator[AsyncClient, None]:
+async def client(
+    db_session: AsyncSession, mock_cv_client: MockCvServiceClient
+) -> AsyncGenerator[AsyncClient, None]:
     async def override_db_session() -> AsyncGenerator[AsyncSession, None]:
         yield db_session
 

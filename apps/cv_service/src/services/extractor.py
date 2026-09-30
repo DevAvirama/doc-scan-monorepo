@@ -6,7 +6,6 @@ from src.domain.schemas import ExtractedData
 
 class VisionProviderError(Exception):
     """Lanzada cuando el proveedor de IA falla en la inferencia o conexión."""
-    pass
 
 
 class DocumentExtractorService:
@@ -50,4 +49,4 @@ class DocumentExtractorService:
         except Exception as e:
             if isinstance(e, VisionProviderError):
                 raise e
-            raise VisionProviderError(f"Error de comunicación con el motor de visión: {str(e)}") from e
+            raise VisionProviderError(f"Error de comunicación con el motor de visión: {e!s}") from e

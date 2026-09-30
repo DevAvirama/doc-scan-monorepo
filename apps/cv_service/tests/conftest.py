@@ -1,10 +1,11 @@
-import pytest
 from decimal import Decimal
+
+import pytest
 from fastapi.testclient import TestClient
 
-from src.main import app
 from src.api.deps import get_document_extractor
-from src.domain.schemas import ExtractedData, ReceiptItem, DocumentType
+from src.domain.schemas import DocumentType, ExtractedData, ReceiptItem
+from src.main import app
 from src.services.extractor import DocumentExtractorService
 
 
@@ -27,10 +28,10 @@ class MockDocumentExtractorService(DocumentExtractorService):
                     description="Producto Test A",
                     quantity=1.0,
                     unit_price=Decimal("45000.00"),
-                    total_price=Decimal("45000.00")
+                    total_price=Decimal("45000.00"),
                 )
             ],
-            confidence_score=0.98
+            confidence_score=0.98,
         )
 
 

@@ -1,4 +1,3 @@
-from typing import List, Tuple
 from uuid import UUID
 
 from src.domain.entities import Document
@@ -25,5 +24,5 @@ class ListDocumentsUseCase:
     def __init__(self, repository: IDocumentRepository):
         self.repository = repository
 
-    async def execute(self, limit: int = 20, offset: int = 0) -> Tuple[List[Document], int]:
+    async def execute(self, limit: int = 20, offset: int = 0) -> tuple[list[Document], int]:
         return await self.repository.list_documents(limit=limit, offset=offset)

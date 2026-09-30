@@ -1,7 +1,7 @@
 from datetime import date, datetime
 from decimal import Decimal
-from typing import List, Optional
 from uuid import UUID
+
 from pydantic import BaseModel, ConfigDict
 
 
@@ -21,15 +21,15 @@ class DocumentResponseDTO(BaseModel):
     id: UUID
     merchant_name: str
     document_type: str
-    tax_id: Optional[str]
-    document_date: Optional[date]
+    tax_id: str | None
+    document_date: date | None
     currency: str
     total_amount: Decimal
-    tax_amount: Optional[Decimal]
+    tax_amount: Decimal | None
     confidence_score: Decimal
-    blur_score: Optional[Decimal]
+    blur_score: Decimal | None
     status: str
-    items: List[DocumentItemDTO]
+    items: list[DocumentItemDTO]
     created_at: datetime
     updated_at: datetime
 
@@ -38,4 +38,4 @@ class PaginatedDocumentsDTO(BaseModel):
     total: int
     limit: int
     offset: int
-    items: List[DocumentResponseDTO]
+    items: list[DocumentResponseDTO]

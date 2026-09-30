@@ -8,10 +8,13 @@ WORKDIR /build
 # Instalar uv para gestión reproducible de dependencias
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-# Copiar manifiesto e instalar dependencias de producción
-COPY pyproject.toml README.md ./
-RUN uv venv /opt/venv && \
-    uv sync --no-dev --locked || uv sync --no-dev
+# Indicar a uv que instale directamente en /opt/venv
+ENV UV_PROJECT_ENVIRONMENT="/opt/venv" \
+    UV_COMPILE_BYTECODE=1
+
+# Copiar manifiesto e instalar dependencias directamente en /opt/venv
+COPY pyproject.toml uv.lock* README.md ./
+RUN uv sync --no-dev --no-install-project || uv sync --no-dev
 
 # ==========================================
 # Etapa 2: Runner (Entorno seguro de ejecución)
@@ -30,7 +33,7 @@ WORKDIR /app
 RUN groupadd -g 10001 appgroup && \
     useradd -u 10001 -g appgroup -s /bin/false -m appuser
 
-# Copiar el entorno virtual empaquetado desde la etapa builder
+# Copiar el entorno virtual completo desde la etapa builder
 COPY --from=builder /opt/venv /opt/venv
 
 # Copiar código fuente y asegurar propiedad de archivos
@@ -43,7 +46,7 @@ USER appuser
 EXPOSE 8000
 
 # Healthcheck interno del contenedor
-HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
+HEALTHCHECK --interval=10s --timeout=5s --start-period=5s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen(\x27http://localhost:8000/api/v1/health\x27)" || exit 1
 
 CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -26,10 +26,10 @@ def document_entity_to_model(entity: Document) -> DocumentModel:
                 quantity=item.quantity,
                 unit_price=item.unit_price,
                 total_price=item.total_price,
-                created_at=entity.created_at
+                created_at=entity.created_at,
             )
             for item in entity.items
-        ]
+        ],
     )
 
 
@@ -41,7 +41,7 @@ def document_model_to_entity(model: DocumentModel) -> Document:
             description=item_model.description,
             quantity=item_model.quantity,
             unit_price=item_model.unit_price,
-            total_price=item_model.total_price
+            total_price=item_model.total_price,
         )
         for item_model in model.items
     ]
@@ -60,5 +60,5 @@ def document_model_to_entity(model: DocumentModel) -> Document:
         status=DocumentStatus(model.status),
         items=items,
         created_at=model.created_at,
-        updated_at=model.updated_at
+        updated_at=model.updated_at,
     )

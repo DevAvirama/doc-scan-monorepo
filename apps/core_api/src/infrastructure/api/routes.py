@@ -1,4 +1,5 @@
 from uuid import UUID
+
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -27,20 +28,23 @@ async def scan_document(
     if file.content_type not in ALLOWED_MIME_TYPES:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"error": "INVALID_FILE_TYPE", "message": f"Tipo {file.content_type} no permitido."}
+            detail={
+                "error": "INVALID_FILE_TYPE",
+                "message": f"Tipo {file.content_type} no permitido.",
+            },
         )
 
     raw_bytes = await file.read()
     if len(raw_bytes) > MAX_FILE_SIZE_BYTES:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail={"error": "FILE_TOO_LARGE", "message": "El archivo excede el límite de 5 MB."}
+            detail={"error": "FILE_TOO_LARGE", "message": "El archivo excede el límite de 5 MB."},
         )
 
     document = await use_case.execute(
         image_bytes=raw_bytes,
         filename=file.filename or "receipt.jpg",
-        content_type=file.content_type or "image/jpeg"
+        content_type=file.content_type or "image/jpeg",
     )
     await session.commit()
     return document
@@ -53,12 +57,7 @@ async def list_documents(
     use_case: ListDocumentsUseCase = Depends(get_list_documents_use_case),
 ):
     items, total = await use_case.execute(limit=limit, offset=offset)
-    return PaginatedDocumentsDTO(
-        total=total,
-        limit=limit,
-        offset=offset,
-        items=items
-    )
+    return PaginatedDocumentsDTO(total=total, limit=limit, offset=offset, items=items)
 
 
 @router.get("/{document_id}", response_model=DocumentResponseDTO, status_code=status.HTTP_200_OK)

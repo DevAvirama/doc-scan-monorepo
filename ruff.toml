@@ -1,0 +1,25 @@
+target-version = "py311"
+line-length = 100
+
+[lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "PIE", # flake8-pie
+    "RUF", # reglas específicas de Ruff
+]
+ignore = [
+    "B008",  # Permitir Depends(), File(), Query() en argumentos por defecto de FastAPI
+    "E501",  # Longitud de línea gestionada por ruff format
+]
+
+[lint.isort]
+known-first-party = ["src", "tests"]
+
+[format]
+quote-style = "double"
+indent-style = "space"

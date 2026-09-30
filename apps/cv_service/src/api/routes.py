@@ -1,4 +1,5 @@
 import time
+
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from fastapi.responses import JSONResponse
 
@@ -22,7 +23,7 @@ def health_check():
     "/extract",
     response_model=ExtractionResponse,
     status_code=status.HTTP_200_OK,
-    tags=["Extraction"]
+    tags=["Extraction"],
 )
 async def extract_document(
     file: UploadFile = File(...),
@@ -35,7 +36,10 @@ async def extract_document(
     if file.content_type not in ALLOWED_MIME_TYPES:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"error": "INVALID_FILE_TYPE", "message": f"Tipo {file.content_type} no soportado."}
+            detail={
+                "error": "INVALID_FILE_TYPE",
+                "message": f"Tipo {file.content_type} no soportado.",
+            },
         )
 
     # 2. Lectura y validación de tamaño
@@ -43,7 +47,7 @@ async def extract_document(
     if len(raw_bytes) > MAX_FILE_SIZE_BYTES:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail={"error": "FILE_TOO_LARGE", "message": "El archivo supera el límite de 5 MB."}
+            detail={"error": "FILE_TOO_LARGE", "message": "El archivo supera el límite de 5 MB."},
         )
 
     # 3. Preprocesamiento con OpenCV
@@ -52,8 +56,8 @@ async def extract_document(
     except InvalidImageError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"error": "INVALID_IMAGE_DATA", "message": str(e)}
-        )
+            detail={"error": "INVALID_IMAGE_DATA", "message": str(e)},
+        ) from e
 
     # 4. Control de calidad: Rechazo si es ilegible/borrosa
     if processed.metrics.is_blurry:
@@ -62,8 +66,8 @@ async def extract_document(
             content={
                 "error": "IMAGE_TOO_BLURRY",
                 "blur_score": processed.metrics.blur_score,
-                "message": "La nitidez de la imagen es insuficiente para una extracción precisa."
-            }
+                "message": "La nitidez de la imagen es insuficiente para una extracción precisa.",
+            },
         )
 
     # 5. Inferencia con Gemini Vision
@@ -72,8 +76,8 @@ async def extract_document(
     except VisionProviderError as e:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail={"error": "VISION_PROVIDER_ERROR", "message": str(e)}
-        )
+            detail={"error": "VISION_PROVIDER_ERROR", "message": str(e)},
+        ) from e
 
     # 6. Cálculo de métricas de tiempo y consolidación de respuesta
     elapsed_ms = round((time.perf_counter() - start_time) * 1000, 2)
@@ -82,5 +86,5 @@ async def extract_document(
         status="success",
         processing_time_ms=elapsed_ms,
         quality_metrics=processed.metrics,
-        extracted_data=extracted
+        extracted_data=extracted,
     )

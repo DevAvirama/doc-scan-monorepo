@@ -1,4 +1,5 @@
-from typing import Any, Dict
+from typing import Any
+
 import httpx
 
 from src.domain.exceptions import VisionServiceError
@@ -13,15 +14,10 @@ class HttpCvServiceClient(ICvServiceClient):
         self.timeout = timeout
 
     async def extract_from_image(
-        self,
-        image_bytes: bytes,
-        filename: str = "receipt.jpg",
-        content_type: str = "image/jpeg"
-    ) -> Dict[str, Any]:
+        self, image_bytes: bytes, filename: str = "receipt.jpg", content_type: str = "image/jpeg"
+    ) -> dict[str, Any]:
         endpoint = f"{self.base_url}/api/v1/extract"
-        files = {
-            "file": (filename, image_bytes, content_type)
-        }
+        files = {"file": (filename, image_bytes, content_type)}
 
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
@@ -32,8 +28,7 @@ class HttpCvServiceClient(ICvServiceClient):
                 payload = response.json()
                 if "extracted_data" not in payload:
                     raise VisionServiceError(
-                        "cv_service retornó un esquema sin extracted_data.",
-                        status_code=502
+                        "cv_service retornó un esquema sin extracted_data.", status_code=502
                     )
                 return payload
 
@@ -43,8 +38,7 @@ class HttpCvServiceClient(ICvServiceClient):
                 msg = err_data.get("message", "La imagen no tiene nitidez suficiente.")
                 blur_score = err_data.get("blur_score", 0.0)
                 raise VisionServiceError(
-                    f"{msg} (Puntuación de nitidez: {blur_score})",
-                    status_code=422
+                    f"{msg} (Puntuación de nitidez: {blur_score})", status_code=422
                 )
 
             # 400 o 413: Archivo no soportado o excede 5 MB
@@ -56,23 +50,22 @@ class HttpCvServiceClient(ICvServiceClient):
             # Otros códigos 5xx
             raise VisionServiceError(
                 f"Fallo del servicio de visión (HTTP {response.status_code}): {response.text}",
-                status_code=502
+                status_code=502,
             )
 
         except httpx.TimeoutException as exc:
             raise VisionServiceError(
                 "Tiempo de espera agotado al conectar con el microservicio de visión.",
-                status_code=504
+                status_code=504,
             ) from exc
 
         except httpx.ConnectError as exc:
             raise VisionServiceError(
                 "No fue posible establecer conexión con el microservicio de visión.",
-                status_code=503
+                status_code=503,
             ) from exc
 
         except httpx.RequestError as exc:
             raise VisionServiceError(
-                f"Error de transporte HTTP hacia cv_service: {str(exc)}",
-                status_code=502
+                f"Error de transporte HTTP hacia cv_service: {exc!s}", status_code=502
             ) from exc

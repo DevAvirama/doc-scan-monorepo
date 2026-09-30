@@ -1,4 +1,5 @@
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
+
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,9 +18,7 @@ async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
         yield session
 
 
-def get_document_repository(
-    session: AsyncSession = Depends(get_db_session)
-) -> IDocumentRepository:
+def get_document_repository(session: AsyncSession = Depends(get_db_session)) -> IDocumentRepository:
     return SQLAlchemyDocumentRepository(session)
 
 

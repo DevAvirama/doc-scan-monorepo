@@ -1,0 +1,57 @@
+services:
+  cv_service:
+    build:
+      context: ./apps/cv_service
+      dockerfile: Dockerfile
+    container_name: docscan_cv_service
+    ports:
+      - "8001:8001"
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GEMINI_MODEL=gemini-3.8-flash
+      - BLUR_THRESHOLD=80.0
+      - MAX_IMAGE_DIMENSION=1920
+      - ENVIRONMENT=development
+    networks:
+      - docscan_net
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys, urllib.request; urllib.request.urlopen(sys.argv[1])", "http://127.0.0.1:8001/api/v1/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 3s
+    restart: unless-stopped
+
+  core_api:
+    build:
+      context: ./apps/core_api
+      dockerfile: Dockerfile
+    container_name: docscan_core_api
+    ports:
+      - "8000:8000"
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
+    environment:
+      - SUPABASE_DB_URL=${SUPABASE_DB_URL:-}
+      - CV_SERVICE_URL=http://cv_service:8001
+      - ENVIRONMENT=development
+    depends_on:
+      cv_service:
+        condition: service_healthy
+    networks:
+      - docscan_net
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys, urllib.request; urllib.request.urlopen(sys.argv[1])", "http://127.0.0.1:8000/api/v1/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 3s
+    restart: unless-stopped
+
+networks:
+  docscan_net:
+    driver: bridge

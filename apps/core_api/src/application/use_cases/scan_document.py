@@ -1,9 +1,7 @@
 from datetime import date
 from decimal import Decimal
-from typing import Optional
 
 from src.domain.entities import Document, DocumentItem, DocumentType
-from src.domain.exceptions import VisionServiceError
 from src.domain.ports.cv_client import ICvServiceClient
 from src.domain.ports.document_repository import IDocumentRepository
 
@@ -16,16 +14,11 @@ class ScanDocumentUseCase:
         self.cv_client = cv_client
 
     async def execute(
-        self,
-        image_bytes: bytes,
-        filename: str = "receipt.jpg",
-        content_type: str = "image/jpeg"
+        self, image_bytes: bytes, filename: str = "receipt.jpg", content_type: str = "image/jpeg"
     ) -> Document:
         # 1. Delegar extracción estructurada al microservicio de visión
         payload = await self.cv_client.extract_from_image(
-            image_bytes=image_bytes,
-            filename=filename,
-            content_type=content_type
+            image_bytes=image_bytes, filename=filename, content_type=content_type
         )
 
         extracted = payload["extracted_data"]
@@ -37,13 +30,13 @@ class ScanDocumentUseCase:
                 description=item["description"],
                 quantity=Decimal(str(item.get("quantity", 1.0))),
                 unit_price=Decimal(str(item["unit_price"])),
-                total_price=Decimal(str(item["total_price"]))
+                total_price=Decimal(str(item["total_price"])),
             )
             for item in extracted.get("items", [])
         ]
 
         # 3. Parsear fecha si fue detectada
-        parsed_date: Optional[date] = None
+        parsed_date: date | None = None
         if extracted.get("date"):
             try:
                 parsed_date = date.fromisoformat(extracted["date"])
@@ -67,10 +60,12 @@ class ScanDocumentUseCase:
             document_date=parsed_date,
             currency=extracted.get("currency", "COP"),
             total_amount=Decimal(str(extracted["total_amount"])),
-            tax_amount=Decimal(str(extracted["tax_amount"])) if extracted.get("tax_amount") is not None else None,
+            tax_amount=Decimal(str(extracted["tax_amount"]))
+            if extracted.get("tax_amount") is not None
+            else None,
             confidence_score=Decimal(str(extracted.get("confidence_score", 1.0))),
             blur_score=blur_score,
-            items=items
+            items=items,
         )
 
         # 5. Persistir atómicamente a través del puerto de repositorio

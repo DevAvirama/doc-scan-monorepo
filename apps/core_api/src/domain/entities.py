@@ -1,18 +1,18 @@
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from decimal import Decimal
-from enum import Enum
-from typing import List, Optional
+from enum import StrEnum
 from uuid import UUID, uuid4
-from pydantic import BaseModel, Field, ConfigDict
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
-class DocumentStatus(str, Enum):
+class DocumentStatus(StrEnum):
     PROCESSED = "PROCESSED"
     REVISED = "REVISED"
     ARCHIVED = "ARCHIVED"
 
 
-class DocumentType(str, Enum):
+class DocumentType(StrEnum):
     RECEIPT = "RECEIPT"
     INVOICE = "INVOICE"
     TICKET = "TICKET"
@@ -35,17 +35,17 @@ class Document(BaseModel):
     id: UUID = Field(default_factory=uuid4)
     merchant_name: str = Field(..., min_length=1)
     document_type: DocumentType = Field(default=DocumentType.RECEIPT)
-    tax_id: Optional[str] = Field(default=None)
-    document_date: Optional[date] = Field(default=None)
+    tax_id: str | None = Field(default=None)
+    document_date: date | None = Field(default=None)
     currency: str = Field(default="COP", min_length=3, max_length=3)
     total_amount: Decimal = Field(..., ge=Decimal("0"))
-    tax_amount: Optional[Decimal] = Field(default=None, ge=Decimal("0"))
+    tax_amount: Decimal | None = Field(default=None, ge=Decimal("0"))
     confidence_score: Decimal = Field(default=Decimal("1.00"), ge=Decimal("0"), le=Decimal("1.00"))
-    blur_score: Optional[Decimal] = Field(default=None, ge=Decimal("0"))
+    blur_score: Decimal | None = Field(default=None, ge=Decimal("0"))
     status: DocumentStatus = Field(default=DocumentStatus.PROCESSED)
-    items: List[DocumentItem] = Field(default_factory=list)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    items: list[DocumentItem] = Field(default_factory=list)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
     def validate_totals(self) -> bool:
         """Verifica la consistencia entre la suma de ítems y el total declarado."""
