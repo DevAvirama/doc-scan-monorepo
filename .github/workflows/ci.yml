@@ -12,8 +12,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  lint:
-    name: Code Quality & Linting
+  lint-backend:
+    name: Backend Linting (Ruff)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -25,12 +25,38 @@ jobs:
           enable-cache: true
 
       - name: Run Ruff Linting
-        run: |
-          uvx ruff check apps/
+        run: uvx ruff check apps/
 
       - name: Run Ruff Format Check
-        run: |
-          uvx ruff format --check apps/
+        run: uvx ruff format --check apps/
+
+  lint-and-build-web:
+    name: Web Frontend (Lint & Build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Build Next.js Application
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: "http://localhost:8000/api/v1"
 
   test-cv-service:
     name: Tests - CV Service
@@ -89,7 +115,7 @@ jobs:
   docker-build:
     name: Docker Build Validation
     runs-on: ubuntu-latest
-    needs: [test-cv-service, test-core-api]
+    needs: [lint-backend, lint-and-build-web, test-cv-service, test-core-api]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -112,3 +138,11 @@ jobs:
           file: ./apps/core_api/Dockerfile
           push: false
           tags: docscan-core-api:ci
+
+      - name: Build web Docker Image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./apps/web
+          file: ./apps/web/Dockerfile
+          push: false
+          tags: docscan-web:ci
